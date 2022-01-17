@@ -1,0 +1,55 @@
+#!/bin/python
+import toml
+import platform
+from os.path import exists
+import os
+from sys import argv
+
+
+def store(packages):
+    if machine_name != "undefined":
+        with open(os.path.expanduser(f"{store_directory}_{package_manager}-{machine_name}"), 'a') as store:
+            for pack in packages:
+                store.write(' ')
+                store.write(pack)
+    else:
+        with open(os.path.expanduser(f"{store_directory}_{package_manager}"), 'a') as store:
+            for pack in packages:
+                store.write(' ')
+                store.write(pack)
+
+if __name__ == "__main__":
+    if len(argv) < 2:
+        print("usage: pacstory <package_name_1> <package_name_2> ...")
+        exit()
+    if not exists(os.path.expanduser('~/.config/pacstory/pacstory.toml')):
+        if not exists(os.path.expanduser('~/.config/pacstory')):
+            os.mkdir(os.path.expanduser('~/.config/pacstory'))
+        with open(os.path.expanduser("~/.config/pacstory/pacstory.toml"), 'w') as newconf:
+            conio = '[machine]\n'\
+                    'name = "undefined"\n'\
+                    'store_directory =  "~/.pacstory_packages"\n'
+            release = platform.release()
+            if 'arch' in release:
+                conio += 'manager = "pacman"\n' 
+            elif 'ubuntu' in release or 'deb' in release:
+                conio += 'manager = "apt"\n'
+            else:
+                conio += 'manager = "pac_manager_here"'
+                print("please, define the package manager name in ~/.config/pacstory/pacstory.toml")
+                exit(-1)
+            newconf.write(conio)
+            # i admit i don't know how to check this automatically
+            # mainly because i don't know what is the output of
+            # platform.release() on each distro
+
+    with open(os.path.expanduser('~/.config/pacstory/pacstory.toml'), 'r') as conf: 
+        parsed_conf = toml.loads(''.join(conf.readlines()))
+        store_directory = parsed_conf['machine']['store_directory']
+        package_manager = parsed_conf['machine']['manager']
+        machine_name = parsed_conf['machine']['name']
+        if 'pac_manager_here' in package_manager:
+            print("please, define the package manager name in '~/.config/pacstory/pacstory.toml'")
+            exit(-1)
+        store(argv[1::])
+    
